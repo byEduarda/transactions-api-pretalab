@@ -1,29 +1,22 @@
 import { PurchaseRepository } from "../repositories/purchaseRepository";
-import { Purchase, PurchaseItem } from "../domain/Purchase";
+import { Purchase } from "../domain/Purchases";
 
 export class PurchaseService {
-  private repo = new PurchaseRepository();
+  private repository: PurchaseRepository;
 
-  getPurchases() {
-    return this.repo.findAll();
+  constructor() {
+    this.repository = new PurchaseRepository();
   }
 
-  getPurchaseById(id: string) {
-    return this.repo.findById(id);
+  getAll(): Purchase[] {
+    return this.repository.getAll();
   }
 
-  createPurchases(data: { date: Date; total: number; items: PurchaseItem[] }) {
-    return this.repo.create({
-      date: data.date instanceof Date ? data.date : new Date(data.date),
-      total: data.total,
-      items: data.items
-    });
+  getById(id: string): Purchase | undefined {
+    return this.repository.getById(id);
+  }
+
+  create(purchase: Omit<Purchase, "id">): Purchase {
+    return this.repository.create(purchase);
   }
 }
-
-const service = new PurchaseService();
-
-export const getPurchases = () => service.getPurchases();
-export const purchaseById = (id: string) => service.getPurchaseById(id);
-export const createPurchase = (data: { date: Date; total: number; items: PurchaseItem[] }) =>
-  service.createPurchases(data);

@@ -54,7 +54,7 @@ jobs:
         run: npm install
       - name: npm test integration
         env:
-          MONGO_URL: mongodb://admin:password@localhost:27017
+          MONGO_URI: mongodb://admin:password@localhost:27017
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: npm run test:integration
 
@@ -70,7 +70,7 @@ jobs:
       contents: "read"
       id-token: "write"
     env:
-      MONGO_URL: ${{secrets.MONGO_URL}}
+      MONGO_URI: ${{secrets.MONGO_URI}}
 
     steps:
       - name: Checkout
@@ -90,7 +90,7 @@ jobs:
           region: ${{ secrets.SERVICE_REGION }}
           source: ./
           env_vars: 
-            MONGO_URL = ${{secrets.MONGO_URL}}
+            MONGO_URI = ${{secrets.MONGO_URI}}
 
       - name: Show Output
         run: echo ${{ steps.deploy.outputs.url }}

@@ -1,13 +1,15 @@
 import { Request, Response } from "express";
+import { ProductService } from "../services/productsService";
 
-const products = [
-  { id: 1, name: "Notebook Gamer Pro", price: 7500 },
-  { id: 2, name: "Mouse Sem Fio Ultra-leve", price: 350 },
-  { id: 3, name: "Teclado Mecânico RGB", price: 550 },
-  { id: 4, name: "Monitor 4K 27\"", price: 2500 },
-  { id: 5, name: "Headset 7.1 Surround", price: 600 },
-  { id: 6, name: "Webcam Full HD", price: 400 },
-  { id: 7, name: "SSD NVMe 1TB", price: 800 }
-];
+const service = new ProductService();
 
-export const getProducts = (_req: Request, res: Response) => res.json(products);
+export const getAllProducts = async (req: Request, res: Response) => {
+  const products = await service.getAll();
+  res.status(200).json(products);
+};
+
+export const getProductById = async (req: Request, res: Response) => {
+  const product = await service.getById(req.params.id);
+  if (!product) return res.status(404).json({ message: "Produto não encontrado." });
+  res.status(200).json(product);
+};

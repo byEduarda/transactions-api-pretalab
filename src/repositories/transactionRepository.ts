@@ -1,28 +1,20 @@
-import mongoose, { Schema, model, Document } from "mongoose";
-import { Transaction } from "../domain/Transaction";
-
-export interface TransactionDocument extends Transaction, Document {}
-
-const transactionSchema = new Schema<TransactionDocument>({
-  date: { type: Date, required: true },
-  description: { type: String, required: true },
-  amount: { type: Number, required: true },
-  type: { type: String, required: true },
-  category: { type: String, required: true }
-});
-
-const TransactionModel = model<TransactionDocument>("Transaction", transactionSchema);
+import { Transaction } from "../domain/Transactions";
+import { v4 as uuid } from "uuid";
 
 export class TransactionRepository {
-  findAll(filters?: any) {
-    return TransactionModel.find(filters).exec();
+  private transactions: Transaction[] = [];
+
+  getAll(): Transaction[] {
+    return [...this.transactions].sort((a, b) => b.date.getTime() - a.date.getTime());
   }
 
-  findById(id: string) {
-    return TransactionModel.findById(id).exec();
+  getById(id: string): Transaction | undefined {
+    return this.transactions.find(t => t.id === id);
   }
 
-  create(transaction: Transaction) {
-    return new TransactionModel(transaction).save();
+  create(transaction: Omit<Transaction, "id">): Transaction {
+    const newTransaction: Transaction = { id: uuid(), ...transaction };
+    this.transactions.push(newTransaction);
+    return newTransaction;
   }
 }

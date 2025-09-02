@@ -1,33 +1,20 @@
-import mongoose, { Schema, model, Document } from "mongoose";
-import { Purchase, PurchaseItem } from "../domain/Purchase";
-
-export interface PurchaseDocument extends Purchase, Document {}
-
-const itemSchema = new Schema<PurchaseItem>({
-  productId: { type: Number, required: true },
-  quantity: { type: Number, required: true },
-  name: { type: String, required: true },
-  price: { type: Number, required: true }
-});
-
-const purchaseSchema = new Schema<PurchaseDocument>({
-  date: { type: Date, required: true },
-  total: { type: Number, required: true },
-  items: { type: [itemSchema], required: true }
-});
-
-const PurchaseModel = model<PurchaseDocument>("Purchase", purchaseSchema);
+import { Purchase } from "../domain/Purchases";
+import { randomUUID } from "crypto";
 
 export class PurchaseRepository {
-  findAll() {
-    return PurchaseModel.find().sort({ date: -1 }).exec();
+  private purchases: Purchase[] = [];
+
+  getAll(): Purchase[] {
+    return this.purchases;
   }
 
-  findById(id: string) {
-    return PurchaseModel.findById(id).exec();
+  getById(id: string): Purchase | undefined {
+    return this.purchases.find(p => p.id === id);
   }
 
-  create(purchase: Purchase) {
-    return new PurchaseModel(purchase).save();
+  create(purchase: Omit<Purchase, "id">): Purchase {
+    const newPurchase: Purchase = { id: randomUUID(), ...purchase };
+    this.purchases.push(newPurchase);
+    return newPurchase;
   }
 }

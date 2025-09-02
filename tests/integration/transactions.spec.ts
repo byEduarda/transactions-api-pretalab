@@ -1,36 +1,63 @@
 import request from "supertest";
-import app from "../../src/index";
-import { transactions } from "../../src/data";
+import mongoose from "mongoose";
+import { MongoMemoryServer } from "mongodb-memory-server";
+import app from "../../src/app";
+
+let mongoServer: MongoMemoryServer;
+
+beforeAll(async () => {
+  if (mongoose.connection.readyState !== 0) await mongoose.disconnect();
+  mongoServer = await MongoMemoryServer.create();
+  await mongoose.connect(mongoServer.getUri());
+});
+
+afterAll(async () => {
+  await mongoose.disconnect();
+  await mongoServer.stop();
+});
 
 describe("Transactions API", () => {
-  it("should return all transactions", async () => {
-    const response = await request(app).get("/transactions");
-    expect(response.status).toBe(200);
-    expect(response.body).toMatchObject(transactions);
+  it("deve retornar lista de transações vazia inicialmente", async () => {
+    const res = await request(app).get("/api/transactions");
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual([]);
   });
 
-  it("should return a transaction by id", async () => {
-    const response = await request(app).get("/transactions/1");
-    expect(response.status).toBe(200);
-    expect(response.body).toMatchObject(transactions[0]);
-  });
-
-  it("should create a new transaction", async () => {
-    const response = await request(app).post("/transactions").send({
-      date: "2024-07-15T10:00:00Z",
-      description: "Salário de Julho/24",
+  it("deve criar uma transação", async () => {
+    const res = await request(app).post("/api/transactions").send({
+      description: "Salário",
+      amount: 5000,
+      type: "income",
+      category: "Salário",
+      date: new Date().toISOString(),
+    });
+    expect(res.status).toBe(201);
+    expect(res.body).toMatchObject({
+      description: "Salário",
       amount: 5000,
       type: "income",
       category: "Salário",
     });
-    expect(response.status).toBe(200);
-    expect(response.body).toMatchObject({
-      id: expect.any(String),
-      date: "2024-07-15T10:00:00Z",
-      description: "Salário de Julho/24",
-      amount: 5000,
-      type: "income",
-      category: "Salário",
+  });
+
+  it("deve buscar uma transação pelo ID", async () => {
+    const createRes = await request(app).post("/api/transactions").send({
+      description: "Aluguel",
+      amount: 1500,
+      type: "expense",
+      category: "Moradia",
+      date: new Date().toISOString(),
+    });
+
+    const id = createRes.body.id;
+    const res = await request(app).get(`/api/transactions/${id}`);
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({
+      id,
+      description: "Aluguel",
+      amount: 1500,
+      type: "expense",
+      category: "Moradia",
     });
   });
 });

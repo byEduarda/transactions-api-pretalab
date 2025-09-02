@@ -1,32 +1,37 @@
 import request from "supertest";
-import app from "../../src/index";
-import { purchases } from "../../src/data";
+import app from "../../src/app";
+import { connect, closeDatabase } from "./setup";
+
+beforeAll(async () => await connect());
+afterAll(async () => await closeDatabase());
 
 describe("Purchases API", () => {
-  it("should return all purchases", async () => {
-    const response = await request(app).get("/purchases");
-    expect(response.status).toBe(200);
-    expect(response.body).toMatchObject(purchases);
+  let purchaseId: string;
+
+  it("deve processar uma compra", async () => {
+    const res = await request(app).post("/api/purchases/checkout").send({
+      cart: [
+        { productId: "1", quantity: 1 },
+        { productId: "2", quantity: 1 },
+      ],
+      total: 7850,
+    });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ message: "Compra processada com sucesso!" });
   });
 
-  it("should return a purchase by id", async () => {
-    const response = await request(app).get("/purchases/1");
-    expect(response.status).toBe(200);
-    expect(response.body).toMatchObject(purchases[0]);
+  it("deve listar todas as compras", async () => {
+    const res = await request(app).get("/api/purchases");
+    expect(res.status).toBe(200);
+    expect(res.body.length).toBeGreaterThan(0);
+    purchaseId = res.body[0].id;
+    expect(res.body[0]).toMatchObject({ total: 7850 });
   });
 
-  it("should create a new purchase", async () => {
-    const response = await request(app).post("/purchases").send({
-      date: "2024-07-15T10:00:00Z",
-      total: 5000,
-      items: [],
-    });
-    expect(response.status).toBe(200);
-    expect(response.body).toMatchObject({
-      id: expect.any(String),
-      date: "2024-07-15T10:00:00Z",
-      total: 5000,
-      items: [],
-    });
+  it("deve buscar uma compra pelo ID", async () => {
+    const res = await request(app).get(`/api/purchases/${purchaseId}`);
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ total: 7850 });
   });
 });

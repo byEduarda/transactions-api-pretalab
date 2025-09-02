@@ -1,24 +1,39 @@
 import { TransactionRepository } from "../repositories/transactionRepository";
-import { Transaction } from "../domain/Transaction";
+import { Transaction, TransactionType } from "../domain/Transactions";
+
+interface TransactionFilter {
+  type?: TransactionType;
+  category?: string;
+  startDate?: Date;
+  endDate?: Date;
+  minAmount?: number;
+  maxAmount?: number;
+}
 
 export class TransactionService {
-  constructor(private repo = new TransactionRepository()) {}
+  private repository = new TransactionRepository();
 
-  list(filters?: any) {
-    return this.repo.findAll(filters);
-  }
+  getAll(filter?: TransactionFilter): Transaction[] {
+    let transactions = this.repository.getAll();
 
-  getById(id: string) {
-    return this.repo.findById(id);
-  }
+    if (!filter) return transactions;
 
-  create(data: Transaction) {
-    return this.repo.create({
-      date: data.date,
-      description: data.description,
-      amount: data.amount,
-      type: data.type,
-      category: data.category
+    return transactions.filter((t) => {
+      if (filter.type && t.type !== filter.type) return false;
+      if (filter.category && t.category !== filter.category) return false;
+      if (filter.startDate && t.date < filter.startDate) return false;
+      if (filter.endDate && t.date > filter.endDate) return false;
+      if (filter.minAmount && t.amount < filter.minAmount) return false;
+      if (filter.maxAmount && t.amount > filter.maxAmount) return false;
+      return true;
     });
+  }
+
+  getById(id: string): Transaction | undefined {
+    return this.repository.getById(id);
+  }
+
+  create(transaction: Omit<Transaction, "id">): Transaction {
+    return this.repository.create(transaction);
   }
 }
