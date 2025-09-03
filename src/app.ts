@@ -17,7 +17,7 @@ app.use(bodyParser.json());
 app.use("/purchases", purchasesRoutes);
 app.use("/products", productsRoutes);
 app.use("/transactions", transactionsRoutes);
-app.use("/api", syncRoutes);
+app.use("/sync-products", syncRoutes);
 
 app.get('/', (_req, res) => {
   res.json({ message: 'Transactions API v2.1' });

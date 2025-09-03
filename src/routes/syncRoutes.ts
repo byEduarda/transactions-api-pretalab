@@ -3,6 +3,6 @@ import { startSync } from "../controllers/syncController";
 
 const router = Router();
 
-router.post("/sync-products", startSync);
+router.post("/", startSync);
 
 export default router;
