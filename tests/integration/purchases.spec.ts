@@ -9,7 +9,7 @@ describe("Purchases API", () => {
   let purchaseId: string;
 
   it("deve processar uma compra", async () => {
-    const res = await request(app).post("/api/purchases/checkout").send({
+    const res = await request(app).post("/purchases/checkout").send({
       cart: [
         { productId: "1", quantity: 1 },
         { productId: "2", quantity: 1 },
@@ -22,7 +22,7 @@ describe("Purchases API", () => {
   });
 
   it("deve listar todas as compras", async () => {
-    const res = await request(app).get("/api/purchases");
+    const res = await request(app).get("/purchases");
     expect(res.status).toBe(200);
     expect(res.body.length).toBeGreaterThan(0);
     purchaseId = res.body[0].id;
@@ -30,7 +30,7 @@ describe("Purchases API", () => {
   });
 
   it("deve buscar uma compra pelo ID", async () => {
-    const res = await request(app).get(`/api/purchases/${purchaseId}`);
+    const res = await request(app).get(`/purchases/${purchaseId}`);
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({ total: 7850 });
   });

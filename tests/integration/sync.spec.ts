@@ -12,7 +12,7 @@ afterAll(async () => {
 
 describe("Integração da Rota de Sincronização", () => {
   it("deve sincronizar produtos e retornar sucesso", async () => {
-    const res = await request(app).post("/api/sync-products");
+    const res = await request(app).post("/sync-products");
     expect(res.status).toBe(200);
     expect(res.body.message).toMatch(/sucesso/i);
   });

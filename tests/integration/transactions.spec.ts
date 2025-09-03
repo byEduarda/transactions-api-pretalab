@@ -18,13 +18,13 @@ afterAll(async () => {
 
 describe("Transactions API", () => {
   it("deve retornar lista de transações vazia inicialmente", async () => {
-    const res = await request(app).get("/api/transactions");
+    const res = await request(app).get("/transactions");
     expect(res.status).toBe(200);
     expect(res.body).toEqual([]);
   });
 
   it("deve criar uma transação", async () => {
-    const res = await request(app).post("/api/transactions").send({
+    const res = await request(app).post("/transactions").send({
       description: "Salário",
       amount: 5000,
       type: "income",
@@ -41,7 +41,7 @@ describe("Transactions API", () => {
   });
 
   it("deve buscar uma transação pelo ID", async () => {
-    const createRes = await request(app).post("/api/transactions").send({
+    const createRes = await request(app).post("/transactions").send({
       description: "Aluguel",
       amount: 1500,
       type: "expense",
@@ -50,7 +50,7 @@ describe("Transactions API", () => {
     });
 
     const id = createRes.body.id;
-    const res = await request(app).get(`/api/transactions/${id}`);
+    const res = await request(app).get(`/transactions/${id}`);
     expect(res.status).toBe(200);
     expect(res.body).toMatchObject({
       id,

@@ -18,18 +18,18 @@ afterAll(async () => {
 
 describe("Integração completa da API", () => {
   it("GET /api/products - deve retornar produtos", async () => {
-    const res = await request(app).get("/api/products");
+    const res = await request(app).get("/products");
     expect(res.status).toBe(200);
   });
 
   it("GET /api/transactions - deve retornar transações (vazio)", async () => {
-    const res = await request(app).get("/api/transactions");
+    const res = await request(app).get("/transactions");
     expect(res.status).toBe(200);
     expect(res.body).toEqual([]);
   });
 
   it("GET /api/purchases - deve retornar compras (vazio)", async () => {
-    const res = await request(app).get("/api/purchases");
+    const res = await request(app).get("/purchases");
     expect(res.status).toBe(200);
     expect(res.body).toEqual([]);
   });
