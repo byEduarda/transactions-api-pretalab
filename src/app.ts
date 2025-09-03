@@ -6,6 +6,7 @@ import { connectDB } from "./database/mongoConnect";
 import productsRoutes from "./routes/productsRoutes";
 import transactionsRoutes from "./routes/transactionsRoutes";
 import purchasesRoutes from "./routes/purchasesRoutes";
+import syncRoutes from "./routes/syncRoutes";
 
 const app = express();
 
@@ -16,6 +17,7 @@ app.use(bodyParser.json());
 app.use("/api/purchases", purchasesRoutes);
 app.use("/api/products", productsRoutes);
 app.use("/api/transactions", transactionsRoutes);
+app.use("/api", syncRoutes);
 
 app.get('/', (_req, res) => {
   res.json({ message: 'Transactions API v2.1' });
