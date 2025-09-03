@@ -14,9 +14,9 @@ app.use(express.json());
 app.use(cors());
 app.use(bodyParser.json());
 
-app.use("/api/purchases", purchasesRoutes);
-app.use("/api/products", productsRoutes);
-app.use("/api/transactions", transactionsRoutes);
+app.use("/purchases", purchasesRoutes);
+app.use("/products", productsRoutes);
+app.use("/transactions", transactionsRoutes);
 app.use("/api", syncRoutes);
 
 app.get('/', (_req, res) => {
