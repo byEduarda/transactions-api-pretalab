@@ -9,7 +9,7 @@ describe("Purchases API", () => {
   let purchaseId: string;
 
   it("deve processar uma compra", async () => {
-    const res = await request(app).post("/purchases/checkout").send({
+    const res = await request(app).post("/purchases").send({
       cart: [
         { productId: "1", quantity: 1 },
         { productId: "2", quantity: 1 },
