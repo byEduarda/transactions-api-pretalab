@@ -88,7 +88,7 @@ jobs:
         with:
           service: ${{ secrets.SERVICE_NAME }}
           region: ${{ secrets.SERVICE_REGION }}
-          source: ./
+          source: ./ 
           env_vars: 
             MONGO_URI = ${{secrets.MONGO_URI}}
 
