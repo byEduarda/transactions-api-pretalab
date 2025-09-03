@@ -3,7 +3,7 @@ import { getAllPurchases, getPurchaseById, checkout } from "../controllers/purch
 
 const router = Router();
 
-router.post("/checkout", checkout);
+router.post("/", checkout);
 router.get("/", getAllPurchases);
 router.get("/:id", getPurchaseById);
 
