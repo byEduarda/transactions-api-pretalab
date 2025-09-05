@@ -28,7 +28,7 @@ export const getTransactionById = (req: Request, res: Response) => {
 export const createTransaction = (req: Request, res: Response) => {
   const { description, amount, type, category, date } = req.body;
 
-  if (!description || typeof amount !== "number" || !type || !category || !date) {
+  if (!description || typeof amount !== "number" || !type || !category) {
     return res.status(400).json({ message: "Dados da transação inválidos." });
   }
 
@@ -37,7 +37,7 @@ export const createTransaction = (req: Request, res: Response) => {
     amount,
     type,
     category,
-    date: new Date(date),
+    date: date ? new Date(date) : new Date(), 
   });
 
   res.status(201).json(transaction);
