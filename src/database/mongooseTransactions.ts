@@ -6,7 +6,7 @@ export interface Transaction {
   amount: number;
   type: "income" | "expense";
   category: string;
-  date: Date;
+  date?: Date;
 }
 
 const transactionSchema = new Schema<Transaction>({
@@ -15,7 +15,7 @@ const transactionSchema = new Schema<Transaction>({
   amount: { type: Number, required: true },
   type: { type: String, enum: ["income", "expense"], required: true },
   category: { type: String, required: true },
-  date: { type: Date, required: true },
+  date: { type: Date, default: () => new Date() },
 }, { timestamps: true });
 
 export const TransactionModel = model<Transaction>("Transaction", transactionSchema);

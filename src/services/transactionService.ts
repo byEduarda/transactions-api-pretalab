@@ -36,12 +36,12 @@ export class TransactionService {
   }
 
   async create(transaction: Omit<Transaction, "id">) {
-    const count = await TransactionModel.countDocuments().exec();
-    const newTransaction = new TransactionModel({
-      ...transaction,
-      id: String(count + 1),
-    });
-
-    return newTransaction.save();
+  const count = await TransactionModel.countDocuments();
+  const newTransaction = new TransactionModel({
+    ...transaction,
+    id: (count + 1).toString(),
+    date: transaction.date || new Date(), 
+  });
+  return newTransaction.save();
   }
 }
