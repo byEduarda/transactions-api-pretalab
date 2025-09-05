@@ -1,8 +1,7 @@
-import { TransactionRepository } from "../repositories/transactionRepository";
-import { Transaction, TransactionType } from "../domain/Transactions";
+import { TransactionModel, Transaction } from "../database/mongooseTransactions";
 
 interface TransactionFilter {
-  type?: TransactionType;
+  type?: "income" | "expense";
   category?: string;
   startDate?: Date;
   endDate?: Date;
@@ -11,29 +10,38 @@ interface TransactionFilter {
 }
 
 export class TransactionService {
-  private repository = new TransactionRepository();
+  async getAll(filter?: TransactionFilter) {
+    const query: any = {};
 
-  getAll(filter?: TransactionFilter): Transaction[] {
-    let transactions = this.repository.getAll();
+    if (filter) {
+      if (filter.type) query.type = filter.type;
+      if (filter.category) query.category = filter.category;
+      if (filter.startDate || filter.endDate) {
+        query.date = {};
+        if (filter.startDate) query.date.$gte = filter.startDate;
+        if (filter.endDate) query.date.$lte = filter.endDate;
+      }
+      if (filter.minAmount || filter.maxAmount) {
+        query.amount = {};
+        if (filter.minAmount) query.amount.$gte = filter.minAmount;
+        if (filter.maxAmount) query.amount.$lte = filter.maxAmount;
+      }
+    }
 
-    if (!filter) return transactions;
+    return TransactionModel.find(query).exec();
+  }
 
-    return transactions.filter((t) => {
-      if (filter.type && t.type !== filter.type) return false;
-      if (filter.category && t.category !== filter.category) return false;
-      if (filter.startDate && t.date < filter.startDate) return false;
-      if (filter.endDate && t.date > filter.endDate) return false;
-      if (filter.minAmount && t.amount < filter.minAmount) return false;
-      if (filter.maxAmount && t.amount > filter.maxAmount) return false;
-      return true;
+  async getById(id: string) {
+    return TransactionModel.findOne({ id }).exec();
+  }
+
+  async create(transaction: Omit<Transaction, "id">) {
+    const count = await TransactionModel.countDocuments().exec();
+    const newTransaction = new TransactionModel({
+      ...transaction,
+      id: String(count + 1),
     });
-  }
 
-  getById(id: string): Transaction | undefined {
-    return this.repository.getById(id);
-  }
-
-  create(transaction: Omit<Transaction, "id">): Transaction {
-    return this.repository.create(transaction);
+    return newTransaction.save();
   }
 }

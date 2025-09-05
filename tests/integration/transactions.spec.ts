@@ -1,63 +1,97 @@
 import request from "supertest";
 import mongoose from "mongoose";
-import { MongoMemoryServer } from "mongodb-memory-server";
 import app from "../../src/app";
-
-let mongoServer: MongoMemoryServer;
+import { TransactionModel } from "../../src/database/mongooseTransactions";
 
 beforeAll(async () => {
-  if (mongoose.connection.readyState !== 0) await mongoose.disconnect();
-  mongoServer = await MongoMemoryServer.create();
-  await mongoose.connect(mongoServer.getUri());
+  await mongoose.connect(process.env.MONGO_URI || "mongodb://localhost:27017/testdb");
 });
 
 afterAll(async () => {
-  await mongoose.disconnect();
-  await mongoServer.stop();
+  await mongoose.connection.dropDatabase();
+  await mongoose.connection.close();
+});
+
+beforeEach(async () => {
+  await TransactionModel.deleteMany({});
 });
 
 describe("Transactions API", () => {
-  it("deve retornar lista de transações vazia inicialmente", async () => {
-    const res = await request(app).get("/transactions");
-    expect(res.status).toBe(200);
-    expect(res.body).toEqual([]);
-  });
+  it("deve criar uma nova transação", async () => {
+    const res = await request(app)
+      .post("/transactions")
+      .send({
+        description: "Salário de Setembro",
+        amount: 5000,
+        type: "income",
+        category: "Salário",
+        date: new Date().toISOString(),
+      });
 
-  it("deve criar uma transação", async () => {
-    const res = await request(app).post("/transactions").send({
-      description: "Salário",
-      amount: 5000,
-      type: "income",
-      category: "Salário",
-      date: new Date().toISOString(),
-    });
     expect(res.status).toBe(201);
     expect(res.body).toMatchObject({
-      description: "Salário",
+      id: "1",
+      description: "Salário de Setembro",
       amount: 5000,
       type: "income",
       category: "Salário",
     });
   });
 
-  it("deve buscar uma transação pelo ID", async () => {
-    const createRes = await request(app).post("/transactions").send({
+  it("deve listar todas as transações", async () => {
+    await TransactionModel.create({
+      id: "1",
       description: "Aluguel",
       amount: 1500,
       type: "expense",
       category: "Moradia",
-      date: new Date().toISOString(),
+      date: new Date(),
     });
 
-    const id = createRes.body.id;
-    const res = await request(app).get(`/transactions/${id}`);
+    const res = await request(app).get("/transactions");
     expect(res.status).toBe(200);
-    expect(res.body).toMatchObject({
-      id,
+    expect(res.body.length).toBeGreaterThan(0);
+    expect(res.body[0]).toMatchObject({
+      id: "1",
       description: "Aluguel",
       amount: 1500,
       type: "expense",
       category: "Moradia",
     });
+  });
+
+  it("deve buscar uma transação pelo id", async () => {
+    await TransactionModel.create({
+      id: "1",
+      description: "Aluguel",
+      amount: 1500,
+      type: "expense",
+      category: "Moradia",
+      date: new Date(),
+    });
+
+    const res = await request(app).get("/transactions/1");
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({
+      id: "1",
+      description: "Aluguel",
+      amount: 1500,
+      type: "expense",
+      category: "Moradia",
+    });
+  });
+
+  it("retorna 404 ao buscar transação inexistente", async () => {
+    const res = await request(app).get("/transactions/999");
+    expect(res.status).toBe(404);
+  });
+
+  it("retorna 400 ao criar transação inválida", async () => {
+    const res = await request(app).post("/transactions").send({
+      description: "",
+      amount: "abc",
+    });
+    expect(res.status).toBe(400);
+    expect(res.body).toMatchObject({ message: "Dados da transação inválidos." });
   });
 });
