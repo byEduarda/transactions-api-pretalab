@@ -1,4 +1,5 @@
-import { TransactionModel, Transaction } from "../database/mongooseTransactions";
+import { TransactionModel } from "../database/mongooseTransactions";
+import { Transaction } from "../models/Transactions";
 
 interface TransactionFilter {
   type?: "income" | "expense";
@@ -36,12 +37,14 @@ export class TransactionService {
   }
 
   async create(transaction: Omit<Transaction, "id">) {
-  const count = await TransactionModel.countDocuments();
-  const newTransaction = new TransactionModel({
-    ...transaction,
-    id: (count + 1).toString(),
-    date: transaction.date || new Date(), 
-  });
-  return newTransaction.save();
+    const count = await TransactionModel.countDocuments();
+
+    const newTransaction = new TransactionModel({
+      ...transaction,
+      id: (count + 1).toString(),
+      date: transaction.date || new Date(), 
+    });
+
+    return newTransaction.save();
   }
 }
