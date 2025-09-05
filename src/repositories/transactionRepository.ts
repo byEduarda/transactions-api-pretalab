@@ -1,4 +1,4 @@
-import { Transaction } from "../domain/Transactions";
+import { Transaction } from "../models/Transactions";
 import { v4 as uuid } from "uuid";
 
 export class TransactionRepository {

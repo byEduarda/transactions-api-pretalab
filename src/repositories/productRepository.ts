@@ -1,4 +1,4 @@
-import { Product } from "../domain/Products";
+import { Product } from "../models/Products";
 
 export class ProductRepository {
   private products: Product[] = [

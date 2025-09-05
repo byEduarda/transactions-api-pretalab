@@ -1,4 +1,4 @@
-import { Purchase } from "../domain/Purchases";
+import { Purchase } from "../models/Purchases";
 import { randomUUID } from "crypto";
 
 export class PurchaseRepository {
