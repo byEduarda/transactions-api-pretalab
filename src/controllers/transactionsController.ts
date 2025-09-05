@@ -1,60 +1,39 @@
 import { Request, Response } from "express";
-import { TransactionService } from "../services/transactionService";
-
-const service = new TransactionService();
+import * as transactionService from "../services/transactionService";
 
 export const getAllTransactions = async (req: Request, res: Response) => {
   try {
-    const { type, category, startDate, endDate, minAmount, maxAmount } = req.query;
-
-    const filter = {
-      type: type as "income" | "expense" | undefined,
-      category: category as string | undefined,
-      startDate: startDate ? new Date(startDate as string) : undefined,
-      endDate: endDate ? new Date(endDate as string) : undefined,
-      minAmount: minAmount ? Number(minAmount) : undefined,
-      maxAmount: maxAmount ? Number(maxAmount) : undefined,
+    const filters = {
+      type: req.query.type as "income" | "expense" | undefined,
+      category: req.query.category as string | undefined,
+      startDate: req.query.startDate as string | undefined,
+      endDate: req.query.endDate as string | undefined,
+      minAmount: req.query.minAmount ? Number(req.query.minAmount) : undefined,
+      maxAmount: req.query.maxAmount ? Number(req.query.maxAmount) : undefined,
     };
 
-    const transactions = await service.getAll(filter);
+    const transactions = await transactionService.getAllTransactions(filters);
     res.status(200).json(transactions);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Erro ao listar transações." });
+  } catch (error) {
+    res.status(500).json({ message: "Erro ao buscar transações", error });
   }
 };
 
-export const getTransactionById = async (req: Request, res: Response) => {
+export const getTransaction = async (req: Request, res: Response) => {
   try {
-    const transaction = await service.getById(req.params.id);
+    const transaction = await transactionService.getTransactionById(req.params.id);
     if (!transaction) return res.status(404).json({ message: "Transação não encontrada." });
-
     res.status(200).json(transaction);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Erro ao buscar transação." });
+  } catch (error) {
+    res.status(500).json({ message: "Erro ao buscar transação", error });
   }
 };
 
-export const createTransaction = async (req: Request, res: Response) => {
+export const create = async (req: Request, res: Response) => {
   try {
-    const { description, amount, type, category, date } = req.body;
-
-    if (!description || typeof amount !== "number" || !type || !category ) {
-      return res.status(400).json({ message: "Dados da transação inválidos." });
-    }
-
-    const transaction = await service.create({
-      description,
-      amount,
-      type,
-      category,
-      date: date ? new Date(date) : undefined,
-    });
-
+    const transaction = await transactionService.create(req.body);
     res.status(201).json(transaction);
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: "Erro ao criar transação." });
+  } catch (error) {
+    res.status(500).json({ message: "Erro ao criar transação", error });
   }
 };

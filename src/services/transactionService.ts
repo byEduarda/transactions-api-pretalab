@@ -1,50 +1,57 @@
-import { TransactionModel } from "../database/mongooseTransactions";
-import { Transaction } from "../models/Transactions";
+import { TransactionModel, ITransaction } from "../database/mongooseTransactions";
 
-interface TransactionFilter {
+export interface TransactionInput {
+  description: string;
+  amount: number;
+  type: "income" | "expense";
+  category: string;
+  date?: Date;
+}
+
+export interface TransactionFilters {
   type?: "income" | "expense";
   category?: string;
-  startDate?: Date;
-  endDate?: Date;
+  startDate?: string;
+  endDate?: string;
   minAmount?: number;
   maxAmount?: number;
 }
 
-export class TransactionService {
-  async getAll(filter?: TransactionFilter) {
-    const query: any = {};
+export const getAllTransactions = async (filters?: TransactionFilters): Promise<ITransaction[]> => {
+  const query: any = {};
 
-    if (filter) {
-      if (filter.type) query.type = filter.type;
-      if (filter.category) query.category = filter.category;
-      if (filter.startDate || filter.endDate) {
-        query.date = {};
-        if (filter.startDate) query.date.$gte = filter.startDate;
-        if (filter.endDate) query.date.$lte = filter.endDate;
-      }
-      if (filter.minAmount || filter.maxAmount) {
-        query.amount = {};
-        if (filter.minAmount) query.amount.$gte = filter.minAmount;
-        if (filter.maxAmount) query.amount.$lte = filter.maxAmount;
-      }
-    }
+  if (filters?.type) query.type = filters.type;
+  if (filters?.category) query.category = filters.category;
 
-    return TransactionModel.find(query).exec();
+  if (filters?.startDate || filters?.endDate) {
+    query.date = {};
+    if (filters.startDate) query.date.$gte = new Date(filters.startDate);
+    if (filters.endDate) query.date.$lte = new Date(filters.endDate);
   }
 
-  async getById(id: string) {
-    return TransactionModel.findOne({ id }).exec();
+  if (filters?.minAmount !== undefined || filters?.maxAmount !== undefined) {
+    query.amount = {};
+    if (filters.minAmount !== undefined) query.amount.$gte = filters.minAmount;
+    if (filters.maxAmount !== undefined) query.amount.$lte = filters.maxAmount;
   }
 
-  async create(transaction: Omit<Transaction, "id">) {
-    const count = await TransactionModel.countDocuments();
+  return await TransactionModel.find(query).sort({ date: -1 });
+};
 
-    const newTransaction = new TransactionModel({
-      ...transaction,
-      id: (count + 1).toString(),
-      date: transaction.date || new Date(), 
-    });
+export const getTransactionById = async (id: string): Promise<ITransaction | null> => {
+  return await TransactionModel.findOne({ id });
+};
 
-    return newTransaction.save();
-  }
-}
+export const create = async (data: TransactionInput): Promise<ITransaction> => {
+  const lastTransaction = await TransactionModel.findOne().sort({ id: -1 });
+  const nextId = lastTransaction ? (parseInt(lastTransaction.id) + 1).toString() : "1";
+
+  const transaction = new TransactionModel({
+    id: nextId,
+    ...data,
+    date: data.date || new Date(),
+  });
+
+  await transaction.save();
+  return transaction;
+};

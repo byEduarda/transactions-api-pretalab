@@ -1,6 +1,5 @@
 import express from "express";
 import cors from "cors";
-import { connectDB } from "./database/mongoConnect";
 
 import productsRoutes from "./routes/productsRoutes";
 import transactionsRoutes from "./routes/transactionsRoutes";
@@ -13,8 +12,6 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.use(cors());
-
-connectDB();
 
 app.use("/purchases", purchasesRoutes);
 app.use("/checkout", checkoutRoutes);

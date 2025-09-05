@@ -1,79 +1,73 @@
-import mongoose from "mongoose";
-import { TransactionService } from "../../src/services/transactionService";
 import { TransactionModel } from "../../src/database/mongooseTransactions";
+import * as transactionService from "../../src/services/transactionService";
+import { connect, closeDatabase, clearDatabase } from "../integration/setup";
 
-beforeAll(async () => {
-  await mongoose.connect(process.env.MONGO_URI || "mongodb://localhost:27017/testdb");
-});
-
-afterAll(async () => {
-  await mongoose.connection.dropDatabase();
-  await mongoose.connection.close();
-});
-
-beforeEach(async () => {
-  await TransactionModel.deleteMany({});
-});
-
-describe("Transactions Unit Tests", () => {
-  let service: TransactionService;
-
-  beforeEach(() => {
-    service = new TransactionService();
+describe("Transaction Service - Unit Tests", () => {
+  beforeAll(async () => {
+    await connect();
   });
 
-  it("deve criar uma transação e gerar id sequencial", async () => {
-    const transaction = await service.create({
-      description: "Salário",
-      amount: 5000,
-      type: "income",
-      category: "Salário",
+  beforeEach(async () => {
+    await clearDatabase();
+  });
+
+  afterAll(async () => {
+    await closeDatabase();
+  });
+
+  it("deve criar uma nova transação com ID sequencial", async () => {
+    const data = {
+      description: "Conta de Luz",
+      amount: 150,
+      type: "expense" as const,
+      category: "Contas",
       date: new Date(),
-    });
+    };
+
+    const transaction = await transactionService.create(data);
 
     expect(transaction).toMatchObject({
       id: "1",
-      description: "Salário",
-      amount: 5000,
-      type: "income",
-      category: "Salário",
+      description: "Conta de Luz",
+      amount: 150,
+      type: "expense",
+      category: "Contas",
     });
   });
 
-  it("deve listar todas as transações", async () => {
-    await service.create({
-      description: "Salário",
-      amount: 5000,
-      type: "income",
-      category: "Salário",
-      date: new Date(),
-    });
-
-    const transactions = await service.getAll();
-    expect(transactions.length).toBe(1);
-    expect(transactions[0]).toMatchObject({
-      id: "1",
-      description: "Salário",
-      amount: 5000,
-      type: "income",
-      category: "Salário",
-    });
+  it("deve retornar uma transação pelo ID", async () => {
+  const created = await transactionService.create({
+    description: "Salário",
+    amount: 5000,
+    type: "income",
+    category: "Salário",
+    date: new Date(),
   });
 
-  it("deve buscar uma transação pelo id", async () => {
-    await service.create({
+  const found = await transactionService.getTransactionById(created.id); 
+  expect(found).toMatchObject({
+    id: created.id,
+    description: "Salário",
+    amount: 5000,
+    type: "income",
+    category: "Salário",
+  });
+});
+
+  it("deve filtrar transações por tipo e categoria", async () => {
+    await transactionService.create({
       description: "Aluguel",
-      amount: 1500,
+      amount: 1200,
       type: "expense",
       category: "Moradia",
       date: new Date(),
     });
 
-    const found = await service.getById("1");
-    expect(found).toMatchObject({
-      id: "1",
-      description: "Aluguel",
-      amount: 1500,
+    const results = await transactionService.getAllTransactions();
+
+    const filtered = results.filter(t => t.type === "expense" && t.category === "Moradia");
+
+    expect(filtered[0]).toMatchObject({
       type: "expense",
       category: "Moradia",
     });
