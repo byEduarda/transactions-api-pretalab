@@ -12,9 +12,9 @@ export const checkout = async (req: Request, res: Response) => {
 
   const items: CreatePurchaseDTO["items"] = cart.map((item: any) => ({
     productId: String(item.productId),
-    quantity: Number(item.quantity),
+    quantity: Number(item.quantity) || 1,
     name: String(item.name || `Produto ${item.productId}`),
-    price: Number(item.price || 0),
+    price: Number(item.price) || 0,
   }));
 
   const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -26,7 +26,7 @@ export const checkout = async (req: Request, res: Response) => {
   try {
     const purchase = await service.create({ total, items });
 
-    const response = {
+    res.status(201).json({
       id: purchase.id,
       date: purchase.date,
       total: purchase.total,
@@ -36,9 +36,7 @@ export const checkout = async (req: Request, res: Response) => {
         price: item.price,
         quantity: item.quantity,
       })),
-    };
-
-    res.status(201).json(response);
+    });
   } catch (err: any) {
     console.error(err);
     res.status(500).json({ message: "Erro ao processar compra." });
