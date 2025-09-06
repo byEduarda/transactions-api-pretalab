@@ -1,11 +1,12 @@
 import { Transaction, transactions as initialTransactions } from "../models/Transactions";
+import { v4 as uuid } from "uuid";
 
 export interface TransactionInput {
   description: string;
   amount: number;
   type: "income" | "expense";
   category: string;
-  date?: Date;
+  date?: string; // opcional
 }
 
 export interface TransactionFilters {
@@ -18,36 +19,44 @@ export interface TransactionFilters {
 }
 
 export class TransactionService {
-  private transactions: Transaction[] = [...initialTransactions]; 
+  private transactions: Transaction[] = [...initialTransactions];
 
-  getAll(filters?: TransactionFilters): Transaction[] {
+  getAllTransactions(filters?: TransactionFilters): Transaction[] {
     let result = [...this.transactions];
-
     if (filters?.type) result = result.filter(t => t.type === filters.type);
     if (filters?.category) result = result.filter(t => t.category === filters.category);
-    if (filters?.startDate) result = result.filter(t => new Date(t.date) >= new Date(filters.startDate!));
-    if (filters?.endDate) result = result.filter(t => new Date(t.date) <= new Date(filters.endDate!));
+    if (filters?.startDate) {
+      const start = new Date(filters.startDate).getTime();
+      result = result.filter(t => new Date(t.date).getTime() >= start);
+    }
+    if (filters?.endDate) {
+      const end = new Date(filters.endDate).getTime();
+      result = result.filter(t => new Date(t.date).getTime() <= end);
+    }
     if (filters?.minAmount !== undefined) result = result.filter(t => t.amount >= filters.minAmount!);
     if (filters?.maxAmount !== undefined) result = result.filter(t => t.amount <= filters.maxAmount!);
 
     return result.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }
 
-  getById(id: string): Transaction | undefined {
+  getTransactionById(id: string): Transaction | undefined {
     return this.transactions.find(t => t.id === id);
   }
 
   create(data: TransactionInput): Transaction {
-    const maxId = this.transactions.reduce((max, t) => Math.max(max, parseInt(t.id)), 0);
-    const nextId = (maxId + 1).toString();
+    const lastTransaction = this.transactions[this.transactions.length - 1];
+    const nextId = lastTransaction ? (parseInt(lastTransaction.id) + 1).toString() : "1";
 
-    const newTransaction: Transaction = {
+    const transaction: Transaction = {
       id: nextId,
-      ...data,
-      date: data.date ? data.date.toISOString() : new Date().toISOString(),
+      description: data.description,
+      amount: data.amount,
+      type: data.type,
+      category: data.category,
+      date: data.date ?? new Date().toISOString(), 
     };
 
-    this.transactions.push(newTransaction);
-    return newTransaction;
+    this.transactions.push(transaction);
+    return transaction;
   }
 }
