@@ -11,17 +11,17 @@ describe("Checkout API", () => {
       .post("/checkout")
       .send({
         cart: [
-          { productId: "1", name: "Notebook Gamer Pro", price: 7500, quantity: 1 },
-          { productId: "2", name: "Mouse Gamer", price: 2500, quantity: 1 }
+          { productId: "1", quantity: 1 },
+          { productId: "2", quantity: 1 }
         ]
       });
 
     expect(res.status).toBe(201);
     expect(res.body).toMatchObject({
-      total: 10000,
+      total: 7850, 
       items: [
         { productId: "1", name: "Notebook Gamer Pro", price: 7500, quantity: 1 },
-        { productId: "2", name: "Mouse Gamer", price: 2500, quantity: 1 }
+        { productId: "2", name: "Mouse Sem Fio Ultra-leve", price: 350, quantity: 1 }
       ]
     });
     expect(res.body).toHaveProperty("id");
@@ -33,7 +33,7 @@ describe("Checkout API", () => {
       .post("/checkout")
       .send({
         cart: [
-          { productId: "1", name: "Notebook Gamer Pro", price: 15000, quantity: 2 }
+          { productId: "1", quantity: 3 }, 
         ]
       });
 
