@@ -7,17 +7,22 @@ export class TransactionRepository {
     return [...this.transactions].sort((a, b) => {
       const dateA = new Date(a.date).getTime();
       const dateB = new Date(b.date).getTime();
-      return dateB - dateA;
+      return dateB - dateA; 
     });
   }
 
   getById(id: string): Transaction | undefined {
-    return this.transactions.find(transaction => transaction.id === id);
+    return this.transactions.find((t) => t.id === id);
   }
 
   create(transaction: Omit<Transaction, "id">): Transaction {
+    const lastId = this.transactions.length
+      ? Math.max(...this.transactions.map((t) => parseInt(t.id)))
+      : 0;
+    const nextId = (lastId + 1).toString();
+
     const newTransaction: Transaction = {
-      id: (this.transactions.length + 1).toString(), 
+      id: nextId,
       ...transaction,
       date: transaction.date ?? new Date().toISOString(),
     };
