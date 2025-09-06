@@ -14,7 +14,7 @@ export const getAllTransactions = (req: Request, res: Response) => {
       maxAmount: req.query.maxAmount ? Number(req.query.maxAmount) : undefined,
     };
 
-    const transactions = service.getAll(filters);
+    const transactions = service.getAllTransactions(filters);
     res.status(200).json(transactions);
   } catch (error) {
     res.status(500).json({ message: "Erro ao buscar transações", error });
@@ -23,7 +23,7 @@ export const getAllTransactions = (req: Request, res: Response) => {
 
 export const getTransaction = (req: Request, res: Response) => {
   try {
-    const transaction = service.getById(req.params.id);
+    const transaction = service.getTransactionById(req.params.id);
     if (!transaction) return res.status(404).json({ message: "Transação não encontrada." });
     res.status(200).json(transaction);
   } catch (error) {
