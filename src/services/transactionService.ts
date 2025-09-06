@@ -1,4 +1,4 @@
-import { TransactionModel, ITransaction } from "../database/mongooseTransactions";
+import { Transaction, transactions as initialTransactions } from "../models/Transactions";
 
 export interface TransactionInput {
   description: string;
@@ -17,43 +17,37 @@ export interface TransactionFilters {
   maxAmount?: number;
 }
 
-export const getAllTransactions = async (
-  filters?: TransactionFilters
-): Promise<ITransaction[]> => {
-  const query: any = {};
+export class TransactionService {
+  private transactions: Transaction[] = [...initialTransactions]; 
 
-  if (filters?.type) query.type = filters.type;
-  if (filters?.category) query.category = filters.category;
+  getAll(filters?: TransactionFilters): Transaction[] {
+    let result = [...this.transactions];
 
-  if (filters?.startDate || filters?.endDate) {
-    query.date = {};
-    if (filters.startDate) query.date.$gte = new Date(filters.startDate);
-    if (filters.endDate) query.date.$lte = new Date(filters.endDate);
+    if (filters?.type) result = result.filter(t => t.type === filters.type);
+    if (filters?.category) result = result.filter(t => t.category === filters.category);
+    if (filters?.startDate) result = result.filter(t => new Date(t.date) >= new Date(filters.startDate!));
+    if (filters?.endDate) result = result.filter(t => new Date(t.date) <= new Date(filters.endDate!));
+    if (filters?.minAmount !== undefined) result = result.filter(t => t.amount >= filters.minAmount!);
+    if (filters?.maxAmount !== undefined) result = result.filter(t => t.amount <= filters.maxAmount!);
+
+    return result.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }
 
-  if (filters?.minAmount !== undefined || filters?.maxAmount !== undefined) {
-    query.amount = {};
-    if (filters.minAmount !== undefined) query.amount.$gte = filters.minAmount;
-    if (filters.maxAmount !== undefined) query.amount.$lte = filters.maxAmount;
+  getById(id: string): Transaction | undefined {
+    return this.transactions.find(t => t.id === id);
   }
 
-  return await TransactionModel.find(query).sort({ date: -1 });
-};
+  create(data: TransactionInput): Transaction {
+    const maxId = this.transactions.reduce((max, t) => Math.max(max, parseInt(t.id)), 0);
+    const nextId = (maxId + 1).toString();
 
-export const getTransactionById = async (id: string): Promise<ITransaction | null> => {
-  return await TransactionModel.findOne({ id });
-};
+    const newTransaction: Transaction = {
+      id: nextId,
+      ...data,
+      date: data.date ? data.date.toISOString() : new Date().toISOString(),
+    };
 
-export const create = async (data: TransactionInput): Promise<ITransaction> => {
-  const lastTransaction = await TransactionModel.findOne().sort({ id: -1 });
-
-  const nextId = lastTransaction ? (parseInt(lastTransaction.id) + 1).toString() : "1";
-
-  const transaction = new TransactionModel({
-    id: nextId,
-    ...data,
-    date: data.date || new Date(),
-  });
-
-  return await transaction.save();
-};
+    this.transactions.push(newTransaction);
+    return newTransaction;
+  }
+}

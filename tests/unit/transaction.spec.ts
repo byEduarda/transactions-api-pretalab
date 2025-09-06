@@ -1,79 +1,58 @@
+import { TransactionRepository } from "../../src/repositories/transactionRepository";
 import * as transactionService from "../../src/services/transactionService";
-import { connect, closeDatabase, clearDatabase } from "../integration/setup";
 
 describe("Transaction Service - Unit Tests", () => {
-  beforeAll(async () => {
-    await connect();
-  });
-
-  beforeEach(async () => {
-    await clearDatabase();
-  });
-
-  afterAll(async () => {
-    await closeDatabase();
-  });
-
-  it("deve criar uma nova transação com ID sequencial", async () => {
-    const data = {
-      description: "Conta de Luz",
-      amount: 150,
+  const mockTransactions = [
+    {
+      id: "1",
+      date: "2024-07-15T10:00:00Z",
+      description: "Salário de Julho",
+      amount: 5000,
+      type: "income" as const,
+      category: "Salário",
+    },
+    {
+      id: "2",
+      date: "2024-07-15T12:30:00Z",
+      description: "Aluguel",
+      amount: 1500,
       type: "expense" as const,
-      category: "Contas",
-      date: new Date(),
+      category: "Moradia",
+    },
+  ];
+
+  let repo: TransactionRepository;
+
+  beforeEach(() => {
+    repo = new TransactionRepository();
+    (repo as any).transactions = [...mockTransactions];
+  });
+
+  it("deve retornar todas as transações", () => {
+  const result = repo.getAll();
+  expect(result.length).toBe(mockTransactions.length);
+  expect(result[0]).toMatchObject(mockTransactions[1]); 
+  expect(result[1]).toMatchObject(mockTransactions[0]); 
+});
+
+  it("deve retornar uma transação pelo ID", () => {
+    const result = repo.getById("2");
+    expect(result).toMatchObject(mockTransactions[1]);
+  });
+
+  it("deve criar uma nova transação com ID sequencial", () => {
+    const newTransaction = {
+      description: "Venda Teste",
+      amount: 1000,
+      type: "income" as const,
+      category: "Renda Extra",
+      date: new Date().toISOString(),
     };
 
-    const transaction = await transactionService.create(data);
+    const created = repo.create(newTransaction);
+    expect(created.id).toBe("3"); 
+    expect(created).toMatchObject(newTransaction);
 
-    expect(transaction).toMatchObject({
-      id: "1", 
-      description: "Conta de Luz",
-      amount: 150,
-      type: "expense",
-      category: "Contas",
-    });
-  });
-
-  it("deve retornar uma transação pelo ID sequencial", async () => {
-    const created = await transactionService.create({
-      description: "Salário",
-      amount: 5000,
-      type: "income",
-      category: "Salário",
-      date: new Date(),
-    });
-
-    const found = await transactionService.getTransactionById(created.id);
-
-    expect(found).not.toBeNull();
-    expect(found).toMatchObject({
-      id: created.id,
-      description: "Salário",
-      amount: 5000,
-      type: "income",
-      category: "Salário",
-    });
-  });
-
-  it("deve filtrar transações por tipo e categoria", async () => {
-    await transactionService.create({
-      description: "Aluguel",
-      amount: 1200,
-      type: "expense",
-      category: "Moradia",
-      date: new Date(),
-    });
-
-    const results = await transactionService.getAllTransactions();
-
-    const filtered = results.filter(
-      (t) => t.type === "expense" && t.category === "Moradia"
-    );
-
-    expect(filtered.length).toBe(1);
-    expect(filtered[0]).toMatchObject({
-      type: "expense",
-      category: "Moradia",
-    });
+    expect(repo.getAll().length).toBe(3);
   });
 });

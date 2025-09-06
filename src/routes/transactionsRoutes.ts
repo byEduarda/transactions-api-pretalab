@@ -5,6 +5,6 @@ const router = Router();
 
 router.get("/", transactionController.getAllTransactions);
 router.get("/:id", transactionController.getTransaction);
-router.post("/", transactionController.create);
+router.post("/", transactionController.createTransaction);
 
 export default router;

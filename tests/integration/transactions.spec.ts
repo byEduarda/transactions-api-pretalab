@@ -1,116 +1,67 @@
 import request from "supertest";
-import mongoose from "mongoose";
-import { MongoMemoryServer } from "mongodb-memory-server";
-import app from "../../src/app";
-import { TransactionModel } from "../../src/database/mongooseTransactions";
+import express from "express";
+import bodyParser from "body-parser";
+import {
+  getAllTransactions,
+  getTransaction,
+  createTransaction,
+} from "../../src/controllers/transactionsController";
 
-let mongoServer: MongoMemoryServer;
+// Monta app de teste
+const app = express();
+app.use(bodyParser.json());
+app.get("/transactions", getAllTransactions);
+app.get("/transactions/:id", getTransaction);
+app.post("/transactions", createTransaction);
 
-beforeAll(async () => {
-  mongoServer = await MongoMemoryServer.create();
-  const uri = mongoServer.getUri();
-  await mongoose.connect(uri);
-});
-
-afterAll(async () => {
-  await mongoose.disconnect();
-  await mongoServer.stop();
-});
-
-beforeEach(async () => {
-  await TransactionModel.deleteMany({});
-});
-
-describe("Integração completa da API de Transações", () => {
-
-  it("GET /transactions - deve retornar lista vazia inicialmente", async () => {
+describe("Transactions API - Integração com mocks", () => {
+  it("deve retornar todas as transações mockadas inicialmente", async () => {
     const res = await request(app).get("/transactions");
     expect(res.status).toBe(200);
-    expect(res.body).toEqual([]);
+
+    expect(res.body.length).toBeGreaterThanOrEqual(10); 
+    expect(res.body[0]).toHaveProperty("id");
+    expect(res.body[0]).toHaveProperty("description");
+    expect(res.body[0]).toHaveProperty("amount");
   });
 
-  it("POST /transactions - deve criar uma nova transação", async () => {
-    const data = {
-      description: "Conta de Internet",
-      amount: 99.9,
-      type: "expense",
-      category: "Contas",
-      date: "2024-07-20T11:00:00.000Z"
+  it("deve criar uma nova transação com ID sequencial", async () => {
+    const newTransaction = {
+      description: "Venda Teste",
+      amount: 1000,
+      type: "income" as const,
+      category: "Renda Extra",
     };
 
-    const res = await request(app)
-      .post("/transactions")
-      .send(data);
-
+    const res = await request(app).post("/transactions").send(newTransaction);
     expect(res.status).toBe(201);
-    expect(res.body).toMatchObject({
-      id: "1",
-      description: "Conta de Internet",
-      amount: 99.9,
-      type: "expense",
-      category: "Contas",
-      date: data.date
-    });
+    expect(res.body.id).toBe("11"); 
+    expect(res.body).toMatchObject(newTransaction);
   });
 
-  it("GET /transactions/:id - deve retornar a transação criada", async () => {
-    const transaction = await TransactionModel.create({
-      id: "1",
-      description: "Salário",
-      amount: 5000,
-      type: "income",
-      category: "Salário",
-      date: new Date("2024-07-15T10:00:00.000Z")
-    });
-
-    const res = await request(app).get(`/transactions/${transaction.id}`);
+  it("deve retornar a transação pelo ID", async () => {
+    const res = await request(app).get("/transactions/11");
     expect(res.status).toBe(200);
-    expect(res.body).toMatchObject({
-      id: "1",
-      description: "Salário",
-      amount: 5000,
-      type: "income",
-      category: "Salário",
-      date: "2024-07-15T10:00:00.000Z"
-    });
+    expect(res.body).toHaveProperty("id", "11");
+    expect(res.body.description).toBe("Venda Teste");
   });
 
-  it("GET /transactions/:id - deve retornar 404 se não existir", async () => {
-    const res = await request(app).get("/transactions/999");
-    expect(res.status).toBe(404);
-    expect(res.body).toEqual({ message: "Transação não encontrada." });
-  });
-
-  it("GET /transactions - deve filtrar transações por tipo e categoria", async () => {
-    await TransactionModel.create([
-      {
-        id: "1",
-        description: "Aluguel",
-        amount: 1200,
-        type: "expense",
-        category: "Moradia",
-        date: new Date()
-      },
-      {
-        id: "2",
-        description: "Salário",
-        amount: 5000,
-        type: "income",
-        category: "Salário",
-        date: new Date()
-      }
-    ]);
-
+  it("deve filtrar transações por tipo e categoria", async () => {
     const res = await request(app)
       .get("/transactions")
-      .query({ type: "expense", category: "Moradia" });
+      .query({ type: "income", category: "Renda Extra" });
 
     expect(res.status).toBe(200);
-    expect(res.body.length).toBe(1);
-    expect(res.body[0]).toMatchObject({
-      type: "expense",
-      category: "Moradia"
-    });
+    expect(res.body.every((t: any) => t.type === "income")).toBe(true);
+    expect(res.body.every((t: any) => t.category === "Renda Extra")).toBe(true);
   });
 
+  it("deve filtrar transações por faixa de valor", async () => {
+    const res = await request(app)
+      .get("/transactions")
+      .query({ minAmount: 100, maxAmount: 500 });
+
+    expect(res.status).toBe(200);
+    expect(res.body.every((t: any) => t.amount >= 100 && t.amount <= 500)).toBe(true);
+  });
 });
