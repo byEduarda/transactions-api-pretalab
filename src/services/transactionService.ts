@@ -1,62 +1,48 @@
-import { Transaction, transactions as initialTransactions } from "../models/Transactions";
-import { v4 as uuid } from "uuid";
-
-export interface TransactionInput {
-  description: string;
-  amount: number;
-  type: "income" | "expense";
-  category: string;
-  date?: string; // opcional
-}
-
-export interface TransactionFilters {
-  type?: "income" | "expense";
-  category?: string;
-  startDate?: string;
-  endDate?: string;
-  minAmount?: number;
-  maxAmount?: number;
-}
+import { TransactionModel, ITransaction } from "../database/mongooseTransactions";
+import { TransactionInput, TransactionFilters, transactions as initialTransactions } from "../models/Transactions";
 
 export class TransactionService {
-  private transactions: Transaction[] = [...initialTransactions];
-
-  getAllTransactions(filters?: TransactionFilters): Transaction[] {
-    let result = [...this.transactions];
-    if (filters?.type) result = result.filter(t => t.type === filters.type);
-    if (filters?.category) result = result.filter(t => t.category === filters.category);
-    if (filters?.startDate) {
-      const start = new Date(filters.startDate).getTime();
-      result = result.filter(t => new Date(t.date).getTime() >= start);
+  static async seedInitialTransactions() {
+    const count = await TransactionModel.countDocuments();
+    if (count === 0) {
+      await TransactionModel.insertMany(initialTransactions);
     }
-    if (filters?.endDate) {
-      const end = new Date(filters.endDate).getTime();
-      result = result.filter(t => new Date(t.date).getTime() <= end);
-    }
-    if (filters?.minAmount !== undefined) result = result.filter(t => t.amount >= filters.minAmount!);
-    if (filters?.maxAmount !== undefined) result = result.filter(t => t.amount <= filters.maxAmount!);
-
-    return result.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }
 
-  getTransactionById(id: string): Transaction | undefined {
-    return this.transactions.find(t => t.id === id);
+  async getAllTransactions(filters?: TransactionFilters): Promise<ITransaction[]> {
+    const query: any = {};
+
+    if (filters?.type) query.type = filters.type;
+    if (filters?.category) query.category = filters.category;
+
+    if (filters?.startDate || filters?.endDate) {
+      query.date = {};
+      if (filters.startDate) query.date.$gte = new Date(filters.startDate);
+      if (filters.endDate) query.date.$lte = new Date(filters.endDate);
+    }
+
+    if (filters?.minAmount !== undefined || filters?.maxAmount !== undefined) {
+      query.amount = {};
+      if (filters.minAmount !== undefined) query.amount.$gte = filters.minAmount;
+      if (filters.maxAmount !== undefined) query.amount.$lte = filters.maxAmount;
+    }
+
+    return await TransactionModel.find(query).sort({ date: 1 });
   }
 
-  create(data: TransactionInput): Transaction {
-    const lastTransaction = this.transactions[this.transactions.length - 1];
-    const nextId = lastTransaction ? (parseInt(lastTransaction.id) + 1).toString() : "1";
+  async getTransactionById(id: string): Promise<ITransaction | null> {
+    return await TransactionModel.findOne({ id });
+  }
+  async create(data: TransactionInput): Promise<ITransaction> {
+    const last = await TransactionModel.findOne().sort({ id: -1 });
+    const nextId = last ? (parseInt(last.id) + 1).toString() : "1";
 
-    const transaction: Transaction = {
+    const transaction = new TransactionModel({
+      ...data,
       id: nextId,
-      description: data.description,
-      amount: data.amount,
-      type: data.type,
-      category: data.category,
-      date: data.date ?? new Date().toISOString(), 
-    };
+    });
 
-    this.transactions.push(transaction);
+    await transaction.save();
     return transaction;
   }
 }

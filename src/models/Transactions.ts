@@ -7,6 +7,23 @@ export interface Transaction {
   category: string;
 }
 
+export interface TransactionInput {
+  description: string;
+  amount: number;
+  type: "income" | "expense";
+  category: string;
+  date?: string; 
+}
+
+export interface TransactionFilters {
+  type?: "income" | "expense";
+  category?: string;
+  startDate?: string;
+  endDate?: string;
+  minAmount?: number;
+  maxAmount?: number;
+}
+
 export const transactions: Transaction[] = [
   {
     id: "1",
