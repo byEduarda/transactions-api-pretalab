@@ -17,7 +17,9 @@ export interface TransactionFilters {
   maxAmount?: number;
 }
 
-export const getAllTransactions = async (filters?: TransactionFilters): Promise<ITransaction[]> => {
+export const getAllTransactions = async (
+  filters?: TransactionFilters
+): Promise<ITransaction[]> => {
   const query: any = {};
 
   if (filters?.type) query.type = filters.type;
@@ -44,6 +46,7 @@ export const getTransactionById = async (id: string): Promise<ITransaction | nul
 
 export const create = async (data: TransactionInput): Promise<ITransaction> => {
   const lastTransaction = await TransactionModel.findOne().sort({ id: -1 });
+
   const nextId = lastTransaction ? (parseInt(lastTransaction.id) + 1).toString() : "1";
 
   const transaction = new TransactionModel({
@@ -52,6 +55,5 @@ export const create = async (data: TransactionInput): Promise<ITransaction> => {
     date: data.date || new Date(),
   });
 
-  await transaction.save();
-  return transaction;
+  return await transaction.save();
 };
