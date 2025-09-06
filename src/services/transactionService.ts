@@ -51,8 +51,9 @@ export class TransactionService {
   }
 
   async create(data: TransactionInput): Promise<ITransaction> {
-    const last = await TransactionModel.findOne().sort({ id: -1 });
-    const nextId = last ? (parseInt(last.id) + 1).toString() : "1";
+    const allTransactions = await TransactionModel.find().exec();
+    const maxId = allTransactions.reduce((max, t) => Math.max(max, parseInt(t.id, 10)), 0);
+    const nextId = (maxId + 1).toString();
 
     const transaction = new TransactionModel({
       ...data,
