@@ -14,7 +14,7 @@ if (!MONGO_URI) {
 }
 
 mongoose.connect(MONGO_URI)
-  .then(async () => {
+  .then(async () => { 
     console.log("✅ MongoDB conectado com sucesso!");
 
     await TransactionService.seedInitialTransactions();
