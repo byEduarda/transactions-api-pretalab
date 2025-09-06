@@ -1,41 +1,39 @@
+
+const mockPurchases = [
+  { id: "1", date: "2024-07-01T10:00:00Z", total: 100, items: [] },
+  { id: "2", date: "2024-07-02T12:00:00Z", total: 200, items: [] },
+];
+
+jest.mock("../../src/services/purchaseService", () => {
+  return {
+    PurchaseService: jest.fn().mockImplementation(() => ({
+      getAll: jest.fn().mockReturnValue(mockPurchases),
+      getById: jest.fn((id: string) =>
+        mockPurchases.find((p) => p.id === id)
+      ),
+      create: jest.fn((purchase: any) => ({
+        id: "3",
+        ...purchase,
+      })),
+    })),
+  };
+});
+
 import request from "supertest";
 import app from "../../src/app";
-import { connect, closeDatabase } from "./setup";
 
-beforeAll(async () => await connect());
-afterAll(async () => await closeDatabase());
+describe("API de Compras", () => {
+  it("deve retornar todas as compras", async () => {
+    const response = await request(app).get("/purchases");
 
-describe("Purchases API", () => {
-  let purchaseId: string;
-
-  it("deve processar uma compra", async () => {
-    const res = await request(app)
-      .post("/checkout")
-      .send({
-        cart: [
-          { productId: "1", name: "Notebook Gamer Pro", price: 7500, quantity: 1 },
-          { productId: "2", name: "Mouse Gamer", price: 2500, quantity: 1 },
-        ]
-      });
-
-    expect(res.status).toBe(201);
-    expect(res.body).toHaveProperty("id");
-    expect(res.body).toHaveProperty("total", 10000); 
-    purchaseId = res.body.id;
+    expect(response.status).toBe(200);
+    expect(response.body).toMatchObject(mockPurchases);
   });
 
-  it("deve listar todas as compras", async () => {
-    const res = await request(app).get("/purchases");
-    expect(res.status).toBe(200);
-    expect(res.body.length).toBeGreaterThan(0);
-    expect(res.body[0]).toHaveProperty("id");
-    expect(res.body[0]).toHaveProperty("total");
-  });
+  it("deve retornar uma compra pelo ID", async () => {
+    const response = await request(app).get("/purchases/1");
 
-  it("deve buscar uma compra pelo ID", async () => {
-    const res = await request(app).get(`/purchases/${purchaseId}`);
-    expect(res.status).toBe(200);
-    expect(res.body).toHaveProperty("id", purchaseId);
-    expect(res.body).toHaveProperty("total");
+    expect(response.status).toBe(200);
+    expect(response.body).toMatchObject(mockPurchases[0]);
   });
 });

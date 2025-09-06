@@ -4,38 +4,22 @@ import { PurchaseService } from "../services/purchaseService";
 const service = new PurchaseService();
 
 export const getAllPurchases = async (_req: Request, res: Response) => {
-  const purchases = await service.getAll();
-
-  const response = purchases.map(p => ({
-    id: p.id,
-    date: p.date,
-    total: p.total,
-    items: p.items.map(item => ({
-      productId: item.productId,
-      name: item.name,
-      price: item.price,
-      quantity: item.quantity,
-    })),
-  }));
-
-  res.status(200).json(response);
+  try {
+    const purchases = await service.getAll();
+    res.status(200).json(purchases);
+  } catch (error) {
+    res.status(500).json({ message: "Erro ao buscar as compras.", error });
+  }
 };
 
 export const getPurchaseById = async (req: Request, res: Response) => {
-  const p = await service.getById(req.params.id);
-  if (!p) return res.status(404).json({ message: "Compra não encontrada." });
-
-  const response = {
-    id: p.id,
-    date: p.date,
-    total: p.total,
-    items: p.items.map(item => ({
-      productId: item.productId,
-      name: item.name,
-      price: item.price,
-      quantity: item.quantity,
-    })),
-  };
-
-  res.status(200).json(response);
+  try {
+    const p = await service.getById(req.params.id);
+    if (!p) {
+      return res.status(404).json({ message: "Compra não encontrada." });
+    }
+    res.status(200).json(p);
+  } catch (error) {
+    res.status(500).json({ message: "Erro ao buscar a compra.", error });
+  }
 };

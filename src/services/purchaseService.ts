@@ -12,11 +12,22 @@ export interface CreatePurchaseDTO {
 
 export class PurchaseService {
   async getAll(): Promise<Purchase[]> {
-    return PurchaseModel.find().sort({ id: 1 }).exec();
+    return PurchaseModel.find()
+      .sort({ id: 1 })
+      .populate({
+        path: 'items.productId',
+        select: 'name price' 
+      })
+      .exec();
   }
 
   async getById(id: string): Promise<Purchase | null> {
-    return PurchaseModel.findOne({ id }).exec();
+    return PurchaseModel.findOne({ id })
+      .populate({
+        path: 'items.productId',
+        select: 'name price'
+      })
+      .exec();
   }
 
   async create(purchase: CreatePurchaseDTO): Promise<Purchase> {

@@ -1,4 +1,3 @@
-import { TransactionModel } from "../../src/database/mongooseTransactions";
 import * as transactionService from "../../src/services/transactionService";
 import { connect, closeDatabase, clearDatabase } from "../integration/setup";
 
@@ -27,7 +26,7 @@ describe("Transaction Service - Unit Tests", () => {
     const transaction = await transactionService.create(data);
 
     expect(transaction).toMatchObject({
-      id: "1",
+      id: "1", 
       description: "Conta de Luz",
       amount: 150,
       type: "expense",
@@ -35,24 +34,26 @@ describe("Transaction Service - Unit Tests", () => {
     });
   });
 
-  it("deve retornar uma transação pelo ID", async () => {
-  const created = await transactionService.create({
-    description: "Salário",
-    amount: 5000,
-    type: "income",
-    category: "Salário",
-    date: new Date(),
-  });
+  it("deve retornar uma transação pelo ID sequencial", async () => {
+    const created = await transactionService.create({
+      description: "Salário",
+      amount: 5000,
+      type: "income",
+      category: "Salário",
+      date: new Date(),
+    });
 
-  const found = await transactionService.getTransactionById(created.id); 
-  expect(found).toMatchObject({
-    id: created.id,
-    description: "Salário",
-    amount: 5000,
-    type: "income",
-    category: "Salário",
+    const found = await transactionService.getTransactionById(created.id);
+
+    expect(found).not.toBeNull();
+    expect(found).toMatchObject({
+      id: created.id,
+      description: "Salário",
+      amount: 5000,
+      type: "income",
+      category: "Salário",
+    });
   });
-});
 
   it("deve filtrar transações por tipo e categoria", async () => {
     await transactionService.create({
@@ -65,8 +66,11 @@ describe("Transaction Service - Unit Tests", () => {
 
     const results = await transactionService.getAllTransactions();
 
-    const filtered = results.filter(t => t.type === "expense" && t.category === "Moradia");
+    const filtered = results.filter(
+      (t) => t.type === "expense" && t.category === "Moradia"
+    );
 
+    expect(filtered.length).toBe(1);
     expect(filtered[0]).toMatchObject({
       type: "expense",
       category: "Moradia",
