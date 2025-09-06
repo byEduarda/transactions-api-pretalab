@@ -31,8 +31,12 @@ describe("Transaction Service - Unit Tests", () => {
   it("deve retornar todas as transações", () => {
   const result = repo.getAll();
   expect(result.length).toBe(mockTransactions.length);
-  expect(result[0]).toMatchObject(mockTransactions[1]); 
-  expect(result[1]).toMatchObject(mockTransactions[0]); 
+  const sortedMock = [...mockTransactions].sort(
+    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+  );
+  
+  expect(result[0]).toMatchObject(sortedMock[0]);
+  expect(result[result.length - 1]).toMatchObject(sortedMock[sortedMock.length - 1]);
 });
 
   it("deve retornar uma transação pelo ID", () => {
