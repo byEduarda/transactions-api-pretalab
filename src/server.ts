@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import app from "./app";
+import { TransactionService } from "./services/transactionService";
 
 dotenv.config();
 
@@ -13,8 +14,12 @@ if (!MONGO_URI) {
 }
 
 mongoose.connect(MONGO_URI)
-  .then(() => {
+  .then(async () => {
     console.log("✅ MongoDB conectado com sucesso!");
+
+    await TransactionService.seedInitialTransactions();
+    console.log("Transações mockadas inseridas (se necessário)");
+
     app.listen(PORT, () => {
       console.log(`🛍️ Server rodando na porta ${PORT}`);
     });
