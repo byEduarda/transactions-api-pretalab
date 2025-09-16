@@ -89,13 +89,14 @@ jobs:
         
       - name: Terraform Apply
         working-directory: ./terraform
-        run: terraform apply -auto-approve \
-          -var="project_id=${{ secrets.GCP_PROJECT_ID }}" \
-          -var="service_name=${{ secrets.SERVICE_NAME }}" \
-          -var="region=${{ secrets.SERVICE_REGION }}" \
-          -var="image=gcr.io/${{ secrets.GCP_PROJECT_ID }}/transactions-api-pretalab:${{ github.sha }}" \
-          -var="mongo_uri=${{ secrets.MONGO_URI }}" \
-          -var="container_port=3000"
+        run: |
+          terraform apply -auto-approve \
+            -var="project_id=${{ secrets.GCP_PROJECT_ID }}" \
+            -var="service_name=${{ secrets.SERVICE_NAME }}" \
+            -var="region=${{ secrets.SERVICE_REGION }}" \
+            -var="image=gcr.io/${{ secrets.GCP_PROJECT_ID }}/transactions-api-pretalab:${{ github.sha }}" \
+            -var="mongo_uri=${{ secrets.MONGO_URI }}" \
+            -var="container_port=3000"
 
   deploy:
     runs-on: ubuntu-latest
