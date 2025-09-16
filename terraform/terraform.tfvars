@@ -5,4 +5,4 @@ service_name           = "transactions-api"
 image                  = "gcr.io/pretalab-transactions/transactions-api-pretalab:latest"
 container_port         = 3000
 mongo_uri              = "mongodb://usuario:senha@cluster0.pczfx9e.mongodb.net/pretalab-transactions"
-gemini_api_key_secret  = "GEMINI_API_KEY"
+gemini_api_key = "GEMINI_API_KEY"
