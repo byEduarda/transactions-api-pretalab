@@ -13,18 +13,19 @@ if (!MONGO_URI) {
   process.exit(1);
 }
 
-mongoose.connect(MONGO_URI)
-  .then(async () => { 
+mongoose
+  .connect(MONGO_URI)
+  .then(async () => {
     console.log("✅ MongoDB conectado com sucesso!");
 
     await TransactionService.seedInitialTransactions();
-    console.log("Transações mockadas inseridas (se necessário)");
+    console.log("💾 Transações mockadas inseridas (se necessário)");
 
     app.listen(PORT, () => {
       console.log(`🛍️ Server rodando na porta ${PORT}`);
     });
   })
-  .catch(err => {
-    console.error("Erro ao conectar no MongoDB:", err);
+  .catch((err: Error) => {
+    console.error("Erro ao conectar no MongoDB:", err.message);
     process.exit(1);
   });
