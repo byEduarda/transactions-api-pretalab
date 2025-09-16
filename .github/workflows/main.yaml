@@ -39,6 +39,8 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           cache: npm
+      - name: Install Docker Compose
+        run: sudo apt-get install docker-compose    
       - name: Create Docker network
         run: docker network create microservice-network
       - name: Start MongoDB
@@ -120,6 +122,8 @@ jobs:
             --set-env-vars PORT=3000,MONGO_URI=${{ secrets.MONGO_URI }}
       - name: Show Service URL
         run: |
+          echo "Esperando 30 segundos para o serviço ser totalmente implantado..."
+          sleep 30
           echo "Service URL: $(gcloud run services describe ${{ secrets.SERVICE_NAME }} \
             --region ${{ secrets.SERVICE_REGION }} \
             --format 'value(status.url)')"
