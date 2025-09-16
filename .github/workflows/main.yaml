@@ -1,4 +1,5 @@
 name: deploy-test
+
 on:
   push:
     branches: 
@@ -6,92 +7,116 @@ on:
   pull_request:
     branches:
       - main
+
 jobs:
   test-unit:
     runs-on: ubuntu-latest
-
     strategy:
       matrix:
         node-version: [20.x]
-
     steps:
       - uses: actions/checkout@v4
-      - name: Use Node.js ${{ matrix.node-version }}
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-          cache: "npm"
+          cache: npm
       - name: Install dependencies
         run: npm install
-      - name: npm test unit
+      - name: Run unit tests
         run: npm run test:unit
 
   test-integration:
     runs-on: ubuntu-latest
-
+    needs: test-unit
     strategy:
       matrix:
         node-version: [20.x]
-
     steps:
       - uses: actions/checkout@v4
-      - name: Use Node.js ${{ matrix.node-version }}
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ matrix.node-version }}
-          cache: "npm"
-
-      - name: Create connection to MongoDB
-        run: docker network create "microservice-network"
-      
-      - name: Set up MongoDB
+          cache: npm
+      - name: Create Docker network
+        run: docker network create microservice-network
+      - name: Start MongoDB
         run: docker compose up -d
-
-      - name: Check mongod
+      - name: Check MongoDB
         run: docker ps
-
       - name: Install dependencies
         run: npm install
-      - name: npm test integration
+      - name: Run integration tests
         env:
           MONGO_URI: mongodb://admin:password@localhost:27017
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: npm run test:integration
 
-  deploy:
+  docker-build-and-push:
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-
-    needs:
-      - test-unit
-      - test-integration
-
-    permissions:
-      contents: "read"
-      id-token: "write"
-    env:
-      MONGO_URI: ${{secrets.MONGO_URI}}
-
+    needs: test-integration
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Google Auth
-        id: auth
-        uses: "google-github-actions/auth@v2"
+      - uses: actions/checkout@v4
+      - name: Authenticate GCP
+        uses: google-github-actions/auth@v2
         with:
           credentials_json: "${{ secrets.GCP_SA_KEY }}"
+      - name: Configure Docker for GCP
+        run: gcloud auth configure-docker
+      - name: Build Docker image
+        run: docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/transactions-api-pretalab:${{ github.sha }} .
+      - name: Push Docker image
+        run: docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/transactions-api-pretalab:${{ github.sha }}
 
-      - name: Deploy to Cloud Run
-        id: deploy
-        uses: google-github-actions/deploy-cloudrun@v2
+  terraform-deploy:
+    runs-on: ubuntu-latest
+    needs: docker-build-and-push
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+      - name: Terraform Init
+        working-directory: ./terraform
+        run: terraform init
+      - name: Terraform Apply
+        working-directory: ./terraform
+        run: terraform apply -auto-approve \
+          -var="project_id=${{ secrets.GCP_PROJECT_ID }}" \
+          -var="service_name=${{ secrets.SERVICE_NAME }}" \
+          -var="region=${{ secrets.SERVICE_REGION }}" \
+          -var="image=gcr.io/${{ secrets.GCP_PROJECT_ID }}/transactions-api-pretalab:${{ github.sha }}" \
+          -var="mongo_uri=${{ secrets.MONGO_URI }}" \
+          -var="container_port=3000"
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: terraform-deploy
+    if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      MONGO_URI: ${{ secrets.MONGO_URI }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Authenticate GCP
+        uses: google-github-actions/auth@v2
         with:
-          service: ${{ secrets.SERVICE_NAME }}
-          region: ${{ secrets.SERVICE_REGION }}
-          source: ./ 
-          env_vars: MONGO_URI=${{ secrets.MONGO_URI }}
-
-      - name: Show Output
-        run: echo ${{ steps.deploy.outputs.url }}
-        
-       
+          credentials_json: "${{ secrets.GCP_SA_KEY }}"
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy ${{ secrets.SERVICE_NAME }} \
+            --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/transactions-api-pretalab:${{ github.sha }} \
+            --region ${{ secrets.SERVICE_REGION }} \
+            --platform managed \
+            --allow-unauthenticated \
+            --set-env-vars PORT=3000,MONGO_URI=${{ secrets.MONGO_URI }}
+      - name: Show Service URL
+        run: |
+          echo "Service URL: $(gcloud run services describe ${{ secrets.SERVICE_NAME }} \
+            --region ${{ secrets.SERVICE_REGION }} \
+            --format 'value(status.url)')"
