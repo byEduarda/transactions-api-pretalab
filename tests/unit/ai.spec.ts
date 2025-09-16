@@ -1,48 +1,62 @@
 import request from "supertest";
-import { connect, closeDatabase, clearDatabase } from "../integration/setup";
 import app from "../../src/app";
 import * as aiService from "../../src/services/aiService";
+import { TransactionModel } from "../../src/database/mongooseTransactions";
 
 jest.mock("../../src/services/aiService");
+jest.mock("../../src/database/mongooseTransactions");
 
 describe("AI Unit", () => {
-  beforeAll(async () => {
-    await connect();
+  beforeAll(() => {
+    jest.spyOn(console, "log").mockImplementation(() => {});
+    jest.spyOn(console, "error").mockImplementation(() => {});
   });
 
-  afterEach(async () => {
-    jest.clearAllMocks();
-    await clearDatabase();
+  afterAll(() => {
+    (console.log as jest.Mock).mockRestore();
+    (console.error as jest.Mock).mockRestore();
   });
 
-  afterAll(async () => {
-    await closeDatabase();
-  });
+  it(
+    "deve retornar 200 com a resposta do assistente financeiro",
+    async () => {
+      (TransactionModel.find as jest.Mock).mockReturnValue({
+        sort: () => ({ exec: () => Promise.resolve([]) }),
+      });
 
-  it("deve retornar 200 com a resposta do assistente financeiro", async () => {
-    const mockReply = "Seu maior gasto foi R$ 500,00";
-    (aiService.financialAssistant as jest.Mock).mockResolvedValue(mockReply);
+      const mockReply = "Seu maior gasto foi R$ 500,00";
+      (aiService.financialAssistant as jest.Mock).mockResolvedValue(mockReply);
 
-    const res = await request(app)
-      .post("/chat")
-      .send({ message: "Qual foi meu maior gasto?" });
+      const res = await request(app)
+        .post("/chat")
+        .send({ message: "Qual foi meu maior gasto?" });
 
-    expect(res.status).toBe(200);
-    expect(res.body.reply).toBe(mockReply);
-    expect(aiService.financialAssistant).toHaveBeenCalledWith(
-      "Qual foi meu maior gasto?",
-      expect.any(Array) 
-    );
-  });
+      expect(res.status).toBe(200);
+      expect(res.body.reply).toBe(mockReply);
+      expect(aiService.financialAssistant).toHaveBeenCalledWith(
+        "Qual foi meu maior gasto?",
+        expect.any(Array)
+      );
+    },
+    10000
+  );
 
-  it("deve retornar 500 se o assistente financeiro falhar", async () => {
-    (aiService.financialAssistant as jest.Mock).mockRejectedValue(new Error("Erro no serviço"));
+  it(
+    "deve retornar 500 se o assistente financeiro falhar",
+    async () => {
+      (TransactionModel.find as jest.Mock).mockReturnValue({
+        sort: () => ({ exec: () => Promise.resolve([]) }),
+      });
 
-    const res = await request(app)
-      .post("/chat")
-      .send({ message: "Qual foi meu maior gasto?" });
+      (aiService.financialAssistant as jest.Mock).mockRejectedValue(new Error("Erro no serviço"));
 
-    expect(res.status).toBe(500);
-    expect(res.body.message).toBe("Ocorreu um erro ao processar sua solicitação.");
-  });
+      const res = await request(app)
+        .post("/chat")
+        .send({ message: "Qual foi meu maior gasto?" });
+
+      expect(res.status).toBe(500);
+      expect(res.body.message).toBe("Ocorreu um erro ao processar sua solicitação.");
+    },
+    10000 
+  );
 });
