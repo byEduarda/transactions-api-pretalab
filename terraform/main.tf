@@ -38,7 +38,7 @@ resource "google_cloud_run_service" "default" {
           name = "GEMINI_API_KEY"
           value_from {
             secret_key_ref {
-              name = var.gemini_api_key
+              name = var.gemini_api_key_secret
               key  = "latest"
             }
           }

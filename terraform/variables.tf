@@ -33,7 +33,7 @@ variable "mongo_uri" {
   type        = string
 }
 
-variable "gemini_api_key" {
+variable "gemini_api_key_secret" {
   description = "Nome do secret da GEMINI_API_KEY no Secret Manager"
   type        = string
 }

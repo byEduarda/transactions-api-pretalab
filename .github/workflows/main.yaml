@@ -101,7 +101,7 @@ jobs:
             -var="image=gcr.io/${{ secrets.GCP_PROJECT_ID }}/transactions-api-pretalab:${{ github.sha }}" \
             -var="mongo_uri=${{ secrets.MONGO_URI }}" \
             -var="container_port=3000" \
-            -var="gemini_api_key=$GEMINI_API_KEY"
+            -var="gemini_api_key_secret=$GEMINI_API_KEY"
 
   deploy:
     runs-on: ubuntu-latest
