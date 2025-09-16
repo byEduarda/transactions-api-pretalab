@@ -83,24 +83,25 @@ jobs:
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
+      - name: Create GCP Credentials File
+        run: echo '${{ secrets.GCP_SA_KEY }}' > ./terraform/gcp-key.json 
+
       - name: Terraform Init
         working-directory: ./terraform
         run: terraform init -upgrade
-
-      - name: Create GCP Credentials File
-        run: echo '${{ secrets.GCP_SA_KEY }}' > ./terraform/gcp-key.json 
         
       - name: Terraform Apply
         working-directory: ./terraform
         run: |
           terraform apply -auto-approve \
-            -var="project_id=${{ secrets.GCP_PROJECT_ID }}" \
             -var="credentials_file=./gcp-key.json" \
+            -var="project_id=${{ secrets.GCP_PROJECT_ID }}" \
             -var="service_name=${{ secrets.SERVICE_NAME }}" \
             -var="region=${{ secrets.SERVICE_REGION }}" \
             -var="image=gcr.io/${{ secrets.GCP_PROJECT_ID }}/transactions-api-pretalab:${{ github.sha }}" \
             -var="mongo_uri=${{ secrets.MONGO_URI }}" \
-            -var="container_port=3000"
+            -var="container_port=3000" \
+            -var="gemini_api_key=$GEMINI_API_KEY"
 
   deploy:
     runs-on: ubuntu-latest

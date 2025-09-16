@@ -5,7 +5,6 @@ terraform {
       version = "~> 6.0"
     }
   }
-  required_version = ">= 1.4.0"
 }
 
 provider "google" {
@@ -22,10 +21,11 @@ resource "google_cloud_run_service" "default" {
     spec {
       containers {
         image = var.image
+
         ports {
-          name           = "http1"
           container_port = var.container_port
         }
+
         env {
           name  = "PORT"
           value = tostring(var.container_port)
@@ -33,6 +33,15 @@ resource "google_cloud_run_service" "default" {
         env {
           name  = "MONGO_URI"
           value = var.mongo_uri
+        }
+        env {
+          name = "GEMINI_API_KEY"
+          value_from {
+            secret_key_ref {
+              name = var.gemini_api_key_secret
+              key  = "latest"
+            }
+          }
         }
       }
     }
@@ -42,10 +51,18 @@ resource "google_cloud_run_service" "default" {
     percent         = 100
     latest_revision = true
   }
+
+  lifecycle {
+    ignore_changes = [
+      template[0].spec[0].containers[0].image,
+      template[0].spec[0].containers[0].env,
+    ]
+  }
 }
 
 resource "google_cloud_run_service_iam_member" "noauth" {
   location = var.region
+  project  = var.project_id
   service  = google_cloud_run_service.default.name
   role     = "roles/run.invoker"
   member   = "allUsers"

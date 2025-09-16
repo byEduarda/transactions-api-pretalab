@@ -1,28 +1,39 @@
-variable "project_id" {
-  type = string
+variable "credentials_file" {
+  description = "Caminho do arquivo JSON de credenciais do GCP"
+  type        = string
 }
 
-variable "service_name" {
-  type = string
+variable "project_id" {
+  description = "ID do projeto GCP"
+  type        = string
 }
 
 variable "region" {
-  type = string
+  description = "Região do Cloud Run"
+  type        = string
+}
+
+variable "service_name" {
+  description = "Nome do serviço Cloud Run"
+  type        = string
 }
 
 variable "image" {
-  type = string
-}
-
-variable "mongo_uri" {
-  type = string
+  description = "Imagem do container no Container Registry"
+  type        = string
 }
 
 variable "container_port" {
-  type = number
-  default = 3000
+  description = "Porta do container"
+  type        = number
 }
 
-variable "credentials_file" {
-  type = string
+variable "mongo_uri" {
+  description = "URI do MongoDB"
+  type        = string
+}
+
+variable "gemini_api_key_secret" {
+  description = "Nome do secret da GEMINI_API_KEY no Secret Manager"
+  type        = string
 }
